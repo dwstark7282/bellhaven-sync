@@ -123,7 +123,17 @@ details{margin-top:8px}summary{cursor:pointer;color:#556}
 <b>New account to create</b>
 <table>{% for k,v in p.new_account.items() %}<tr><th>{{k}}</th><td class="new">{{v}}</td></tr>{% endfor %}</table>
 {% endif %}
+{% if p.kind == "create" %}
+<b style="display:block;margin-top:14px">Closest existing CRM accounts in {{site.city}}, {{site.state}}</b>
+{% if p.evidence.same_city_accounts %}
+<div class="meta">Checked and ruled out: street and phone don't match the website. Reject this card if one of these is actually the same building.</div>
+<table><tr><th>Account</th><th>Owner</th><th>Street</th><th>Phone</th><th>Name similarity</th></tr>
+<tr style="color:#667"><td><i>Website listing</i></td><td>Bellhaven</td><td>{{site.street}}</td><td>{{site.phone}}</td><td></td></tr>
+{% for o in p.evidence.same_city_accounts %}<tr><td>{{o.name}}<br><code>{{o.account_id}}</code></td><td>{{o.parent}}</td><td>{{o.street}}</td><td>{{o.phone}}</td><td>{{o.name_similarity}}</td></tr>{% endfor %}</table>
+{% else %}<div class="meta">None: no CRM account in this city at all.</div>{% endif %}
+{% endif %}
 
+{% if p.kind != "create" %}
 <table style="margin-top:8px"><tr><th></th><th>Website{% if site %} · <a href="{{site.url}}" target="_blank">listing</a>{% endif %}</th><th>CRM {% if crm.account_id %}<code>{{crm.account_id}}</code>{% endif %}</th><th>Proposed change</th></tr>
 {% set sitemap = {"name":site.name,"billing_street":site.street,"billing_city":site.city,"billing_state":site.state,"billing_zip":site.zip,"phone":site.phone,"care_type":(site.care_offerings|join(", ")) if site else None} if site else {} %}
 {% for f in fields %}{% set key = "parent_id" if f=="parent_name" else f %}{% set changed = key in p.changes %}
@@ -133,6 +143,7 @@ details{margin-top:8px}summary{cursor:pointer;color:#556}
 {% endfor %}
 {% if p.note %}<tr class="chg"><th>note (appended)</th><td></td><td></td><td class="new">{{p.note}}</td></tr>{% endif %}
 </table>
+{% endif %}
 
 {% if p.evidence.signals %}<div class="sig" style="margin-top:8px">{% for k,v in p.evidence.signals.items() %}<span class="{{'y' if v and v!=0 else 'n'}}">{{k}}{% if v is number and v is not boolean %} {{v}}{% endif %}</span>{% endfor %}
 {% if p.evidence.contacts %}<span class="meta">contacts: {{p.evidence.contacts|join(", ")}}</span>{% endif %}</div>{% endif %}
@@ -149,8 +160,7 @@ details{margin-top:8px}summary{cursor:pointer;color:#556}
 {% if p.evidence.same_address_elsewhere %}<details open><summary>Same address under another parent</summary><table>
 {% for o in p.evidence.same_address_elsewhere %}<tr><td>{{o.name}} <code>{{o.account_id}}</code></td><td>{{o.parent_name}}</td><td>{{o.billing_street}}, {{o.billing_city}}</td></tr>{% endfor %}</table></details>{% endif %}
 
-{% if p.evidence.same_city_accounts %}<details><summary>Other CRM accounts in {{site.city}}, {{site.state}} (checked, not matched)</summary><table>
-{% for o in p.evidence.same_city_accounts %}<tr><td>{{o.name}} <code>{{o.account_id}}</code></td><td>{{o.parent}}</td><td>{{o.street}}</td><td>name sim {{o.name_similarity}}</td></tr>{% endfor %}</table></details>{% endif %}
+
 
 {% if p.result %}<div class="meta" style="margin-top:8px">Result: <code>{{p.result}}</code></div>{% endif %}
 

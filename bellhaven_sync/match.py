@@ -146,7 +146,8 @@ def build(locations, accounts: list[dict], contacts: list[dict]) -> tuple[list[P
         if not cands:
             nearby = sorted(
                 ({"account_id": a["account_id"], "name": a["name"], "street": a["billing_street"],
-                  "parent": a["parent_name"], "name_similarity": s["name_similarity"]}
+                  "phone": a["phone"], "parent": a["parent_name"] or "(no parent)",
+                  "name_similarity": s["name_similarity"]}
                  for a, s in scored if a["billing_state"] == loc.state
                  and N.city(a["billing_city"]) == N.city(loc.city)),
                 key=lambda r: -r["name_similarity"])
