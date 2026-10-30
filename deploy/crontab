@@ -1,0 +1,5 @@
+# Install with: crontab deploy/crontab  (edit the path first)
+# 06:00 Central, Mon-Fri: queue is fresh before reviewers start. Re-runs are idempotent,
+# so a manual run (or the "Run pipeline now" button) at any time is safe.
+CRON_TZ=America/Chicago
+0 6 * * 1-5  /path/to/bellhaven-sync/deploy/daily.sh
