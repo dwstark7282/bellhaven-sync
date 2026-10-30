@@ -134,7 +134,8 @@ def build(locations, accounts: list[dict], contacts: list[dict]) -> tuple[list[P
     # Accounts already resolved by an earlier decision are out of the pool:
     # duplicates point at their survivor, CHOW'd accounts point at their replacement.
     pool = [a for a in accounts if a["account_id"] not in parents
-            and not a["duplicate_of_account"] and not a["chow_current_account"]]
+            and not a["duplicate_of_account"] and not a["chow_current_account"]
+            and "UNDONE: created in error" not in (a["note"] or "")]
 
     proposals, matched, claimed = [], [], set()
 

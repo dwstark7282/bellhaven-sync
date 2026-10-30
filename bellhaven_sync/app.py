@@ -9,7 +9,7 @@ import os
 from flask import Flask, redirect, render_template_string, request, url_for
 
 from . import pipeline, store
-from .apply import Stale, apply
+from .apply import Stale, apply, undo
 from .crm import CRM
 
 app = Flask(__name__)
@@ -61,6 +61,20 @@ def decide(pid):
         store.decide(conn, pid, "failed", REVIEWER, {"error": str(e)})
         msg = f"Failed: {e}"
     return redirect(url_for("index", tab=request.args.get("tab", "pending"), msg=msg))
+
+
+@app.post("/undo/<pid>")
+def undo_change(pid):
+    conn = db()
+    p = store.get(conn, pid)
+    if not p or p["status"] != "applied":
+        return redirect(url_for("index", tab="applied", msg="Only applied changes can be undone."))
+    try:
+        back_to = undo(CRM(), p)
+    except Exception as e:  # noqa: BLE001
+        return redirect(url_for("index", tab="applied", msg=f"Undo failed: {e}"))
+    store.decide(conn, pid, back_to, REVIEWER, {"undone": p["result"]})
+    return redirect(url_for("index", tab=back_to, msg=f"Undone: {p['title']} (now {back_to})"))
 
 
 @app.post("/run")
@@ -164,6 +178,9 @@ details{margin-top:8px}summary{cursor:pointer;color:#556}
 
 {% if p.result %}<div class="meta" style="margin-top:8px">Result: <code>{{p.result}}</code></div>{% endif %}
 
+{% if p.status == "applied" %}
+<form class="actions" method="post" action="/undo/{{p.id}}" onsubmit="return confirm('Undo this change in the CRM?')">
+<button class="reject" name="action" value="undo">Undo</button></form>{% endif %}
 {% if p.status in ("pending","failed") %}
 <form class="actions" method="post" action="/decide/{{p.id}}?tab={{tab}}">
 <button class="approve" name="action" value="approve">{{"Retry" if p.status=="failed" else "Approve & write to CRM"}}</button>

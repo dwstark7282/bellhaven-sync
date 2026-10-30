@@ -149,3 +149,27 @@ def test_apply_refuses_reparent_if_ar_appeared(data, result):
     with pytest.raises(Stale):
         apply(crm, as_row(p))
     assert not crm.writes
+
+
+def test_undo_restores_exact_previous_values(data, result):
+    from bellhaven_sync.apply import undo
+    crm = FakeCRM(data[1])
+    before = copy.deepcopy(crm.accts["001LGFPBJY4N9MB6KL"])
+    (p,) = by_account(result[0], "001LGFPBJY4N9MB6KL")
+    row = as_row(p)
+    row["result"] = apply(crm, row)
+    assert crm.accts["001LGFPBJY4N9MB6KL"]["parent_id"] == BELLHAVEN
+    assert undo(crm, row) == "pending"
+    assert crm.accts["001LGFPBJY4N9MB6KL"] == before
+
+
+def test_undo_create_deactivates_and_allows_recreate(data, result):
+    from bellhaven_sync.apply import undo
+    crm = FakeCRM(data[1])
+    (p,) = [x for x in result[0] if x.slug == "bellhaven-of-batavia"]
+    row = as_row(p)
+    row["result"] = apply(crm, row)
+    new_id = row["result"]["created"]
+    assert undo(crm, row) == "rejected"
+    assert crm.accts[new_id]["status"] == "Inactive"
+    assert apply(crm, row)["created"] != new_id  # undone account is not reused
